@@ -1,14 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
 import { supabase } from '../lib/supabase'
 import CanvasBoard from '../components/CanvasBoard'
-import AuthButton from '../components/AuthButton'
 import Recommendations from '../components/Recommendations'
 
 export default function HomePage() {
-  const { data: session, status } = useSession()
   const [messages, setMessages] = useState([
     { id: 1, text: "Привет! Я твой AI-кофаундер. Расскажи о своей идее, и я помогу тебе пройти путь от идеи до запуска продукта!", isAI: true }
   ])
@@ -152,9 +149,8 @@ export default function HomePage() {
         {/* Left Column - Chat Interface */}
         <div className="w-1/3 border-r border-gray-100 flex flex-col">
           {/* Chat Header */}
-          <div className="p-8 border-b border-gray-50 flex items-center justify-between">
+          <div className="p-8 border-b border-gray-50">
             <h2 className="text-lg font-light text-gray-400 tracking-wide">AI Чат</h2>
-            <AuthButton />
           </div>
           
           {/* Messages Area */}
