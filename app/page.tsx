@@ -8,23 +8,54 @@ export default function HomePage() {
   ])
   const [inputText, setInputText] = useState('')
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (inputText.trim()) {
-      // Добавляем сообщение пользователя
       const userMessage = { id: Date.now(), text: inputText, isAI: false }
       setMessages(prev => [...prev, userMessage])
       
-      // Имитируем ответ AI
-      setTimeout(() => {
+      const currentInput = inputText
+      setInputText('')
+      
+      try {
+        // Отправляем запрос к GPT API
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: currentInput,
+            conversationHistory: messages
+          }),
+        })
+
+        const data = await response.json()
+        
+        if (data.success) {
+          const aiResponse = { 
+            id: Date.now() + 1, 
+            text: data.response, 
+            isAI: true 
+          }
+          setMessages(prev => [...prev, aiResponse])
+        } else {
+          // Fallback ответ если API недоступен
+          const aiResponse = { 
+            id: Date.now() + 1, 
+            text: data.response || "Извините, сервис временно недоступен. Попробуйте позже.", 
+            isAI: true 
+          }
+          setMessages(prev => [...prev, aiResponse])
+        }
+      } catch (error) {
+        console.error('Chat API Error:', error)
         const aiResponse = { 
           id: Date.now() + 1, 
-          text: "Отличная идея! Давайте разберем её подробнее. Расскажи, какую проблему решает твоя идея?", 
+          text: "Извините, произошла ошибка. Попробуйте еще раз.", 
           isAI: true 
         }
         setMessages(prev => [...prev, aiResponse])
-      }, 1000)
-      
-      setInputText('')
+      }
     }
   }
 
