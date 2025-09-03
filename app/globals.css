@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.canvas-container {
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+}
+
+.phase-active {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.object-problem { 
+  background: #fef2f2; 
+  border-color: #fca5a5; 
+}
+
+.object-insight { 
+  background: #eff6ff; 
+  border-color: #93c5fd; 
+}
+
+.object-persona { 
+  background: #f0fdf4; 
+  border-color: #86efac; 
+}
+
+.object-solution { 
+  background: #faf5ff; 
+  border-color: #c4b5fd; 
+}
+
+.object-milestone { 
+  background: #fffbeb; 
+  border-color: #fcd34d; 
+}
+
+.object-note { 
+  background: #f9fafb; 
+  border-color: #d1d5db; 
+}
