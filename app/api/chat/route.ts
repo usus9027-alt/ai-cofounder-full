@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { saveIdeaToVectorDB, getIdeaRecommendations } from '../../../lib/pinecone'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -7,7 +8,7 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, conversationHistory = [] } = await request.json()
+    const { message, conversationHistory = [], projectId = 'default-project' } = await request.json()
 
     if (!message) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 })
@@ -15,6 +16,22 @@ export async function POST(request: NextRequest) {
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
+    }
+
+    // Сохраняем идею в векторную базу данных
+    try {
+      await saveIdeaToVectorDB({
+        id: `idea-${Date.now()}`,
+        content: message,
+        projectId: projectId,
+        metadata: {
+          type: 'user_message',
+          timestamp: new Date().toISOString()
+        }
+      })
+    } catch (error) {
+      console.error('Error saving to vector database:', error)
+      // Продолжаем выполнение даже если векторная БД недоступна
     }
 
     // Формируем системный промпт для AI-кофаундера
@@ -49,9 +66,33 @@ export async function POST(request: NextRequest) {
 
     const aiResponse = completion.choices[0]?.message?.content || 'Извините, не могу ответить сейчас.'
 
+    // Сохраняем ответ AI в векторную базу данных
+    try {
+      await saveIdeaToVectorDB({
+        id: `ai-response-${Date.now()}`,
+        content: aiResponse,
+        projectId: projectId,
+        metadata: {
+          type: 'ai_response',
+          timestamp: new Date().toISOString()
+        }
+      })
+    } catch (error) {
+      console.error('Error saving AI response to vector database:', error)
+    }
+
+    // Получаем рекомендации похожих идей
+    let recommendations = []
+    try {
+      recommendations = await getIdeaRecommendations(conversationHistory, projectId)
+    } catch (error) {
+      console.error('Error getting recommendations:', error)
+    }
+
     return NextResponse.json({ 
       response: aiResponse,
-      success: true 
+      success: true,
+      recommendations: recommendations
     })
 
   } catch (error) {
