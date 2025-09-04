@@ -6,9 +6,10 @@ import { supabase } from '../lib/supabase'
 
 interface CanvasBoardProps {
   projectId?: string
+  onCanvasUpdate?: (objects: any[]) => void
 }
 
-export default function CanvasBoard({ projectId = 'default-project' }: CanvasBoardProps) {
+export default function CanvasBoard({ projectId = 'default-project', onCanvasUpdate }: CanvasBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -113,51 +114,74 @@ export default function CanvasBoard({ projectId = 'default-project' }: CanvasBoa
     }
   }
 
-  const addText = () => {
+  // Функции для AI - создание объектов
+  const addTextFromAI = (text: string, x: number = 100, y: number = 100) => {
     if (!fabricCanvasRef.current) return
 
-    const text = new fabric.IText('Нажмите для редактирования', {
-      left: 100,
-      top: 100,
+    const textObj = new fabric.IText(text, {
+      left: x,
+      top: y,
       fontFamily: 'Arial',
-      fontSize: 20,
-      fill: '#333333'
+      fontSize: 16,
+      fill: '#333333',
+      selectable: true,
+      editable: true
     })
 
-    fabricCanvasRef.current.add(text)
-    fabricCanvasRef.current.setActiveObject(text)
+    fabricCanvasRef.current.add(textObj)
+    fabricCanvasRef.current.setActiveObject(textObj)
+    return textObj
   }
 
-  const addRectangle = () => {
+  const addRectangleFromAI = (x: number = 200, y: number = 200, width: number = 100, height: number = 100, color: string = '#e3f2fd') => {
     if (!fabricCanvasRef.current) return
 
     const rect = new fabric.Rect({
-      left: 200,
-      top: 200,
-      width: 100,
-      height: 100,
-      fill: '#e3f2fd',
+      left: x,
+      top: y,
+      width: width,
+      height: height,
+      fill: color,
       stroke: '#1976d2',
-      strokeWidth: 2
+      strokeWidth: 2,
+      selectable: true,
+      movable: true
     })
 
     fabricCanvasRef.current.add(rect)
+    return rect
   }
 
-  const addCircle = () => {
+  const addCircleFromAI = (x: number = 300, y: number = 300, radius: number = 50, color: string = '#f3e5f5') => {
     if (!fabricCanvasRef.current) return
 
     const circle = new fabric.Circle({
-      left: 300,
-      top: 300,
-      radius: 50,
-      fill: '#f3e5f5',
+      left: x,
+      top: y,
+      radius: radius,
+      fill: color,
       stroke: '#7b1fa2',
-      strokeWidth: 2
+      strokeWidth: 2,
+      selectable: true,
+      movable: true
     })
 
     fabricCanvasRef.current.add(circle)
+    return circle
   }
+
+  // Экспорт функций для AI
+  useEffect(() => {
+    if (fabricCanvasRef.current) {
+      // Добавляем функции в глобальный объект для доступа из API
+      (window as any).canvasAPI = {
+        addText: addTextFromAI,
+        addRectangle: addRectangleFromAI,
+        addCircle: addCircleFromAI,
+        clearCanvas: clearCanvas
+      }
+    }
+  }, [fabricCanvasRef.current])
 
   const clearCanvas = () => {
     if (!fabricCanvasRef.current) return
@@ -188,39 +212,17 @@ export default function CanvasBoard({ projectId = 'default-project' }: CanvasBoa
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Toolbar */}
-      <div className="flex items-center space-x-2 p-4 border-b border-gray-100">
-        <button
-          onClick={addText}
-          className="px-3 py-1 text-xs font-light text-gray-600 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-        >
-          📝 Текст
-        </button>
-        <button
-          onClick={addRectangle}
-          className="px-3 py-1 text-xs font-light text-gray-600 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-        >
-          ⬜ Прямоугольник
-        </button>
-        <button
-          onClick={addCircle}
-          className="px-3 py-1 text-xs font-light text-gray-600 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-        >
-          ⭕ Круг
-        </button>
-        <div className="flex-1"></div>
-        <button
-          onClick={exportCanvas}
-          className="px-3 py-1 text-xs font-light text-gray-600 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-        >
-          💾 Экспорт
-        </button>
-        <button
-          onClick={clearCanvas}
-          className="px-3 py-1 text-xs font-light text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
-        >
-          🗑️ Очистить
-        </button>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-100">
+        <h3 className="text-lg font-light text-gray-400 tracking-wide">AI Canvas</h3>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={exportCanvas}
+            className="px-3 py-1 text-xs font-light text-gray-600 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+          >
+            💾 Экспорт
+          </button>
+        </div>
       </div>
 
       {/* Canvas */}
@@ -233,7 +235,7 @@ export default function CanvasBoard({ projectId = 'default-project' }: CanvasBoa
       {/* Instructions */}
       <div className="p-4 border-t border-gray-100">
         <p className="text-xs text-gray-400 text-center">
-          Перетаскивайте объекты, редактируйте текст, изменяйте размеры. Все изменения сохраняются автоматически.
+          AI создает объекты на основе ваших идей. Вы можете перетаскивать, редактировать текст и изменять размеры.
         </p>
       </div>
     </div>
