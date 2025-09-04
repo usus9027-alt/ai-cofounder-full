@@ -4,26 +4,60 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import CanvasBoard from '../components/CanvasBoard'
 import Recommendations from '../components/Recommendations'
+import AuthForm from '../components/AuthForm'
 
 export default function HomePage() {
+  const [user, setUser] = useState<any>(null)
   const [messages, setMessages] = useState([
     { id: 1, text: "Привет! Я твой AI-кофаундер. Расскажи о своей идее, и я помогу тебе пройти путь от идеи до запуска продукта!", isAI: true }
   ])
   const [inputText, setInputText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [recommendations, setRecommendations] = useState<any[]>([])
+  const [isAuthLoading, setIsAuthLoading] = useState(true)
 
-  // Загружаем сообщения из Supabase при загрузке страницы
+  // Проверяем аутентификацию при загрузке страницы
   useEffect(() => {
-    loadMessages()
+    checkAuth()
   }, [])
 
-  const loadMessages = async () => {
+  const checkAuth = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUser(user)
+        loadMessages(user.id)
+      }
+    } catch (error) {
+      console.error('Auth check error:', error)
+    } finally {
+      setIsAuthLoading(false)
+    }
+  }
+
+  const handleAuthSuccess = (userData: any) => {
+    setUser(userData)
+    loadMessages(userData.id)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      setUser(null)
+      setMessages([{ id: 1, text: "Привет! Я твой AI-кофаундер. Расскажи о своей идее, и я помогу тебе пройти путь от идеи до запуска продукта!", isAI: true }])
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
+
+  const loadMessages = async (userId?: string) => {
+    if (!userId) return
+    
     try {
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .eq('project_id', 'default-project')
+        .eq('user_id', userId)
         .order('created_at', { ascending: true })
 
       if (error) {
@@ -45,12 +79,14 @@ export default function HomePage() {
   }
 
   const saveMessage = async (content: string, role: 'user' | 'assistant') => {
+    if (!user) return
+    
     try {
       const { error } = await supabase
         .from('messages')
         .insert([
           {
-            project_id: 'default-project',
+            user_id: user.id,
             content: content,
             role: role,
             created_at: new Date().toISOString()
@@ -143,14 +179,38 @@ export default function HomePage() {
     }
   }
 
+  // Показываем форму аутентификации если пользователь не авторизован
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-gray-400">Загрузка...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <AuthForm onAuthSuccess={handleAuthSuccess} />
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <div className="flex h-screen">
         {/* Left Column - Chat Interface */}
         <div className="w-1/3 border-r border-gray-100 flex flex-col">
           {/* Chat Header */}
-          <div className="p-8 border-b border-gray-50">
+          <div className="p-8 border-b border-gray-50 flex items-center justify-between">
             <h2 className="text-lg font-light text-gray-400 tracking-wide">AI Чат</h2>
+            <div className="flex items-center space-x-3">
+              <span className="text-sm font-light text-gray-600">
+                {user.email}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1 text-xs font-light text-gray-600 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+              >
+                Выйти
+              </button>
+            </div>
           </div>
           
           {/* Messages Area */}
