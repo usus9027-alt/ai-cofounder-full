@@ -5,13 +5,20 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// Инициализируем Pinecone
-const pinecone = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY || '',
-})
+// Инициализируем Pinecone только если есть API ключ
+let pinecone: Pinecone | null = null
+
+if (process.env.PINECONE_API_KEY) {
+  pinecone = new Pinecone({
+    apiKey: process.env.PINECONE_API_KEY,
+  })
+}
 
 // Получаем индекс
 const getIndex = () => {
+  if (!pinecone) {
+    throw new Error('Pinecone not initialized - API key missing')
+  }
   return pinecone.index(process.env.PINECONE_INDEX_NAME || 'ai-cofounder-ideas')
 }
 
@@ -38,6 +45,11 @@ export async function saveIdeaToVectorDB(idea: {
   metadata?: any
 }) {
   try {
+    if (!pinecone) {
+      console.log('Pinecone not available - skipping vector save')
+      return
+    }
+    
     const embedding = await createEmbedding(idea.content)
     const index = getIndex()
     
@@ -58,13 +70,18 @@ export async function saveIdeaToVectorDB(idea: {
     console.log('Idea saved to vector database:', idea.id)
   } catch (error) {
     console.error('Error saving idea to vector database:', error)
-    throw error
+    // Не выбрасываем ошибку, чтобы не ломать основной функционал
   }
 }
 
 // Ищем похожие идеи
 export async function findSimilarIdeas(query: string, projectId?: string, limit = 5) {
   try {
+    if (!pinecone) {
+      console.log('Pinecone not available - returning empty results')
+      return []
+    }
+    
     const queryEmbedding = await createEmbedding(query)
     const index = getIndex()
     
