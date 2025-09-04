@@ -11,6 +11,7 @@ let pinecone: Pinecone | null = null
 if (process.env.PINECONE_API_KEY) {
   pinecone = new Pinecone({
     apiKey: process.env.PINECONE_API_KEY,
+    environment: process.env.PINECONE_ENVIRONMENT || 'us-east-1-aws'
   })
 }
 
