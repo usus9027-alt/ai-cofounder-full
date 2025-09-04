@@ -5,14 +5,22 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// Инициализируем Pinecone только если есть API ключ
+// Инициализируем Pinecone только если есть все необходимые переменные
 let pinecone: Pinecone | null = null
 
-if (process.env.PINECONE_API_KEY) {
-  pinecone = new Pinecone({
-    apiKey: process.env.PINECONE_API_KEY,
-    environment: process.env.PINECONE_ENVIRONMENT || 'us-east-1-aws'
-  })
+if (process.env.PINECONE_API_KEY && process.env.PINECONE_ENVIRONMENT) {
+  try {
+    pinecone = new Pinecone({
+      apiKey: process.env.PINECONE_API_KEY,
+      environment: process.env.PINECONE_ENVIRONMENT
+    })
+    console.log('Pinecone initialized successfully')
+  } catch (error) {
+    console.error('Failed to initialize Pinecone:', error)
+    pinecone = null
+  }
+} else {
+  console.log('Pinecone not initialized - missing API key or environment')
 }
 
 // Получаем индекс
