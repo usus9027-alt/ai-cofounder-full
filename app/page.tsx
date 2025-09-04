@@ -265,7 +265,7 @@ export default function HomePage() {
 
         {/* Right Column - Canvas Board */}
         <div className="w-2/3 flex flex-col">
-          <CanvasBoard projectId="default-project" />
+          <CanvasBoard projectId={user.id} />
         </div>
       </div>
     </div>
