@@ -1,3 +1,15 @@
+import { NextResponse } from 'next/server'
+
+export async function POST() {
+  try {
+    // For Supabase auth client-side SDK, signOut happens on client.
+    // This endpoint exists to keep the client API consistent and allow future server-side invalidation.
+    return NextResponse.json({ success: true })
+  } catch (e: any) {
+    return NextResponse.json({ success: false, error: String(e?.message || e) }, { status: 500 })
+  }
+}
+
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '../../../../lib/supabase'
 
