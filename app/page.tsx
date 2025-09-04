@@ -121,7 +121,8 @@ export default function HomePage() {
           },
           body: JSON.stringify({
             message: currentInput,
-            conversationHistory: messages
+            conversationHistory: messages,
+            projectId: user.id // Pass user ID as project ID for now
           }),
         })
 
